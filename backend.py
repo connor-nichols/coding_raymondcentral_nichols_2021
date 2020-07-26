@@ -41,7 +41,6 @@ class Student:  # What makes a student. Only required params are name and grade.
             self.quizzes_taken = str([])  # Formats as a list to prevent having to do this later. Stored as str for db.
         self.average_score = average_score
 
-        # Usage information. These variables tell the program how to use these objects.
         self.database = databases["Students"]  # Mirrors the databases variable, so changes made there reflect here.
         self.table = "Students"  # Tells the program the table it needs.
         self.columns = [{"id": self.id},  # Defines columns in database. Allows generalization.
@@ -68,10 +67,27 @@ class Student:  # What makes a student. Only required params are name and grade.
 
 
 class Adviser:
-    def __init__(self, name, id_num, role):
+    def __init__(self, name, role, id_num = None):
         self.name = name
-        self.id_num = id_num  # TODO: temp holder until id creation works
+        self.id = id_num
+        self.role = role
+        # Usage variables
+        self.database = databases["Advisers"]  # Mirrors the databases variable, so changes made there reflect here.
+        self.table = "Advisers"  # Tells the program the table it needs.
+        self.columns = [{"id": self.id},  # Defines columns in database. Allows generalization.
+                        {"name": self.name},  # List of dicts allows easy unpacking to kwargs.
+                        {"role": self.role}
+                        ]
+        self.unique_key = "id"  # Tells the program when it's searching what key should be used as a unique identifier.
+        self.dict_form = {"id": self.id,  # Provides dictionary form of data in the object
+                          "name": self.name,
+                          "role": self.role
+                          }
 
+        self.primary_unique_index = 0  # Tells functions which item should be used to check uniqueness
+        self.secondary_unique_index = 1  # Backup, mainly used for creating ids
+        self.id = create_ids(self)  # This is redefined so the items above don't conflict.
+        # TODO: Could possibly create headaches later on. Keep that in mind. - Connor from the past
 
 class Quiz:
     pass
@@ -146,7 +162,7 @@ def unique_check(object_check, return_mode=False, use_secondary=False):
 
 def add_edit_items(add_object):  # Uses upsert to insert items if they don't exist, and update them if they do.
     table = return_table(add_object)
-    if unique_check(add_object):
+    if unique_check(add_object, use_secondary=True):
         table.upsert(add_object.dict_form, [add_object.unique_key])
 
 
@@ -154,5 +170,8 @@ setup()
 
 test1 = Student("CNf ffj", 9)
 
+advtest = Adviser("Connor Nichols", "Head Adviser")
+
 add_edit_items(test1)
+add_edit_items(advtest)
 print(unique_check(test1))
