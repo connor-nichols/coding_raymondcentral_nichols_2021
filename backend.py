@@ -1,6 +1,7 @@
 import os  # Used for managing files
 import dataset  # Used for managing the databases in an easy to read way
 import random
+import string
 
 databases = {  # Dictionary to store databases and their locations. Locations are also store in applicable objects.
     "Students": r"data\Students.db",  # Mirrored in Student class
@@ -35,7 +36,7 @@ def setup():  # Initial setup upon each run. Also performs first time setup, as 
 class Student:  # What makes a student. Only required params are name and grade. All others can be auto generated.
     def __init__(self, name, grade, id_num=None, quizzes_taken=None, average_score=None):
         self.name = name
-        self.id = None  # Defined up here so the lower items know about it. See note at bottom of class.
+        self.id = id_num  # Defined up here so the lower items know about it. See note at bottom of class.
         self.grade = grade
         if quizzes_taken is None:
             self.quizzes_taken = str([])  # Formats as a list to prevent having to do this later. Stored as str for db.
@@ -59,7 +60,8 @@ class Student:  # What makes a student. Only required params are name and grade.
 
         self.primary_unique_index = 0  # Tells functions which item should be used to check uniqueness
         self.secondary_unique_index = 1  # Backup, mainly used for creating ids
-        self.id = create_ids(self)  # This is redefined so the items above don't conflict.
+        if self.id is None:
+            self.id = create_ids(self)  # This is redefined so the items above don't conflict.
         # TODO: Could possibly create headaches later on. Keep that in mind. - Connor from the past
 
     def __call__(self):
@@ -86,19 +88,41 @@ class Adviser:
 
         self.primary_unique_index = 0  # Tells functions which item should be used to check uniqueness
         self.secondary_unique_index = 1  # Backup, mainly used for creating ids
-        self.id = create_ids(self)  # This is redefined so the items above don't conflict.
+        if id_num is None:
+            self.id = create_ids(self)  # This is redefined so the items above don't conflict.
         # TODO: Could possibly create headaches later on. Keep that in mind. - Connor from the past
 
-class Quiz:
-    pass
 
-
-class Question:
-    pass
+class Quiz:  # A quiz needs questions and an ID. We'll only create a quiz once, no duplicates
+    def __init__(self, id_num: int, questions: list):
+        self.id = create_ids(self)
 
 
 class Answer:
-    pass
+    def __init__(self, text: dict, question_type, correct: bool):
+        self.text = text
+        self.type = question_type
+        self.correct = correct
+
+
+class Question:
+    def __init__(self, text: str, question_type):
+        self.text = text
+        self.type = question_type
+        self.answers = {}
+
+        if self.type == "matching" or "multiple_choice":
+            self.keys = list(string.ascii_lowercase)
+
+    def add_answer(self, answer: Answer):
+        if self.type == "matching":
+            for key in answer.text.keys():
+                print(key)
+                if key not in self.keys:
+                    return False
+                else:
+                    self.answers.update(answer.text)
+
 
 
 def create_ids(new_object):
@@ -168,10 +192,8 @@ def add_edit_items(add_object):  # Uses upsert to insert items if they don't exi
 
 setup()
 
-test1 = Student("CNf ffj", 9)
+test = Question("Who am I?", "matching")
 
-advtest = Adviser("Connor Nichols", "Head Adviser")
-
-add_edit_items(test1)
-add_edit_items(advtest)
-print(unique_check(test1))
+test.add_answer(Answer({"a": "Connor"}, "matching", True))
+print(test.add_answer(Answer({"a": "Connor"}, "matching", True)))
+print(test.answers)
